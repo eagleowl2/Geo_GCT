@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -26,6 +26,8 @@ class SeriesMatrix:
     probe_ids: tuple[str, ...]
     # shape: (n_probes, n_samples), dtype float32
     expression: np.ndarray
+    # Human-readable sample labels from !Sample_title (empty tuple if absent)
+    sample_titles: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         expected = (len(self.probe_ids), len(self.sample_ids))

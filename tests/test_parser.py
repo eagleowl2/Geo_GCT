@@ -40,6 +40,19 @@ def test_parse_sample_ids() -> None:
     assert result.sample_ids == ("GSM001", "GSM002", "GSM003")
 
 
+def test_parse_sample_titles() -> None:
+    result = parse(io.StringIO(MINI_MATRIX_TEXT))
+    assert result.sample_titles == ("Control 1", "Control 2", "Treated 1")
+
+
+def test_parse_no_sample_titles_gives_empty_tuple() -> None:
+    text_without_titles = MINI_MATRIX_TEXT.replace(
+        "!Sample_title = Control 1\tControl 2\tTreated 1\n", ""
+    )
+    result = parse(io.StringIO(text_without_titles))
+    assert result.sample_titles == ()
+
+
 def test_parse_probe_ids() -> None:
     result = parse(io.StringIO(MINI_MATRIX_TEXT))
     assert result.probe_ids == ("1007_s_at", "1053_at", "121_at")

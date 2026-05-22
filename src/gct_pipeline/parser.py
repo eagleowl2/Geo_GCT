@@ -39,6 +39,7 @@ def parse(source: str | Path | IO[str]) -> SeriesMatrix:
 def _parse_stream(fh: IO[str]) -> SeriesMatrix:
     metadata: dict[str, str] = {}
     sample_ids: tuple[str, ...] = ()
+    sample_titles: tuple[str, ...] = ()
     probe_ids: list[str] = []
     rows: list[np.ndarray] = []
     state = _State.HEADER
@@ -59,6 +60,8 @@ def _parse_stream(fh: IO[str]) -> SeriesMatrix:
                 _parse_meta_line(line, metadata)
                 if line.startswith("!Sample_geo_accession"):
                     sample_ids = _extract_sample_ids(line)
+                elif line.startswith("!Sample_title"):
+                    sample_titles = _extract_sample_ids(line)  # same tab-split logic
 
         elif state is _State.TABLE_HEADER:
             if not line or line.startswith("!"):
@@ -108,6 +111,7 @@ def _parse_stream(fh: IO[str]) -> SeriesMatrix:
     return SeriesMatrix(
         metadata=metadata,
         sample_ids=sample_ids,
+        sample_titles=sample_titles,
         probe_ids=tuple(probe_ids),
         expression=expression,
     )

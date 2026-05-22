@@ -231,13 +231,38 @@ if st.session_state.matrix is not None:
     # Expression preview
     st.subheader("Expression matrix preview (first 50 rows)")
     n_preview = min(50, len(matrix.probe_ids))
+
+    # Column labels: prefer sample titles when available
+    has_titles = len(matrix.sample_titles) == len(matrix.sample_ids)
+    if has_titles:
+        use_titles = st.toggle(
+            "Show sample titles instead of GSM IDs",
+            value=True,
+            help="Switches column headers between human-readable titles "
+                 "(e.g. 'BMDM, untreated, 1') and GEO accession IDs.",
+        )
+        col_labels = list(matrix.sample_titles if use_titles else matrix.sample_ids)
+    else:
+        col_labels = list(matrix.sample_ids)
+
     preview_df = pd.DataFrame(
         matrix.expression[:n_preview],
         index=list(matrix.probe_ids[:n_preview]),
-        columns=list(matrix.sample_ids),
+        columns=col_labels,
     )
     preview_df.index.name = "Probe ID"
     st.dataframe(preview_df, use_container_width=True)
+
+    # Sample title reference table
+    if has_titles:
+        with st.expander("🏷️ Sample ID ↔ title mapping", expanded=False):
+            st.dataframe(
+                pd.DataFrame(
+                    {"GSM ID": list(matrix.sample_ids), "Title": list(matrix.sample_titles)}
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
 
     # ---------------------------------------------------------------------------
     # Step 3 — Convert & Export

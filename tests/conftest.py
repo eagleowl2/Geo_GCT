@@ -17,6 +17,7 @@ MINI_MATRIX_TEXT = """\
 !Series_title = Test Series
 !Series_geo_accession = GSE999
 !Sample_geo_accession = GSM001\tGSM002\tGSM003
+!Sample_title = Control 1\tControl 2\tTreated 1
 !series_matrix_table_begin
 ID_REF\tGSM001\tGSM002\tGSM003
 1007_s_at\t5.1\t6.2\t7.3
