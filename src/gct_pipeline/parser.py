@@ -67,10 +67,14 @@ def _parse_stream(fh: IO[str]) -> SeriesMatrix:
             if not line or line.startswith("!"):
                 continue
             cols = [c.strip('"') for c in line.split("\t")]
-            if cols[0] != "ID_REF":
+            # Drop trailing empty columns (artifact of trailing \t in some GEO files)
+            while cols and not cols[-1]:
+                cols.pop()
+            if not cols or cols[0] != "ID_REF":
+                got = cols[0] if cols else ""
                 raise ParseError(
                     f"line {lineno}: expected table header starting with"
-                    f" 'ID_REF', got {cols[0]!r}"
+                    f" 'ID_REF', got {got!r}"
                 )
             header_samples = tuple(cols[1:])
             if sample_ids and header_samples != sample_ids:
@@ -87,8 +91,12 @@ def _parse_stream(fh: IO[str]) -> SeriesMatrix:
                 continue
             cols = line.split("\t")
             probe_ids.append(cols[0].strip('"'))
+            # Strip quotes; drop trailing empty columns (artifact of trailing \t)
+            value_cols = [c.strip('"') for c in cols[1:]]
+            while value_cols and not value_cols[-1]:
+                value_cols.pop()
             try:
-                values = np.array([c.strip('"') for c in cols[1:]], dtype=np.float32)
+                values = np.array(value_cols, dtype=np.float32)
             except ValueError as exc:
                 raise ParseError(f"line {lineno}: cannot parse floats: {exc}") from exc
             if len(values) != len(sample_ids):

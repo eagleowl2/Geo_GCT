@@ -110,6 +110,22 @@ def test_parse_empty_table() -> None:
     assert result.expression.shape == (0, 2)
 
 
+def test_parse_trailing_tab_in_header_and_data() -> None:
+    """Real GEO files often end every row with a trailing \\t; parser must ignore it."""
+    text = (
+        '!Series_geo_accession\t"GSE999"\n'
+        '!Sample_geo_accession\t"GSM001"\t"GSM002"\t"GSM003"\n'
+        '!series_matrix_table_begin\n'
+        '"ID_REF"\t"GSM001"\t"GSM002"\t"GSM003"\t\n'  # trailing tab
+        '"1007_s_at"\t"5.1"\t"6.2"\t"7.3"\t\n'       # trailing tab
+        '!series_matrix_table_end\n'
+    )
+    result = parse(io.StringIO(text))
+    assert result.probe_ids == ("1007_s_at",)
+    assert result.sample_ids == ("GSM001", "GSM002", "GSM003")
+    assert result.expression.shape == (1, 3)
+
+
 # ---------------------------------------------------------------------------
 # Error cases
 # ---------------------------------------------------------------------------
