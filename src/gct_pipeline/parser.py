@@ -66,7 +66,7 @@ def _parse_stream(fh: IO[str]) -> SeriesMatrix:
         elif state is _State.TABLE_HEADER:
             if not line or line.startswith("!"):
                 continue
-            cols = line.split("\t")
+            cols = [c.strip('"') for c in line.split("\t")]
             if cols[0] != "ID_REF":
                 raise ParseError(
                     f"line {lineno}: expected table header starting with"
@@ -86,9 +86,9 @@ def _parse_stream(fh: IO[str]) -> SeriesMatrix:
             if not line:
                 continue
             cols = line.split("\t")
-            probe_ids.append(cols[0])
+            probe_ids.append(cols[0].strip('"'))
             try:
-                values = np.array(cols[1:], dtype=np.float32)
+                values = np.array([c.strip('"') for c in cols[1:]], dtype=np.float32)
             except ValueError as exc:
                 raise ParseError(f"line {lineno}: cannot parse floats: {exc}") from exc
             if len(values) != len(sample_ids):
@@ -118,13 +118,24 @@ def _parse_stream(fh: IO[str]) -> SeriesMatrix:
 
 
 def _parse_meta_line(line: str, metadata: dict[str, str]) -> None:
-    """Split '!Key = Value' into metadata dict; strips surrounding quotes from value."""
-    if "=" not in line:
-        return
-    key, _, raw_value = line.partition("=")
-    key = key.strip().lstrip("!")
-    value = raw_value.strip().strip('"')
-    metadata[key] = value
+    """Split a GEO metadata line into the metadata dict.
+
+    Handles two separator styles found in GEO Series Matrix files:
+      - ``!Key = value``  (standard SOFT format, ` = ` with spaces)
+      - ``!Key\tvalue``   (tab-separated, used by some fields)
+
+    Only the first value is stored; multi-value tab-separated lines
+    (e.g. !Sample_geo_accession) are handled separately by _extract_sample_ids.
+    """
+    stripped = line.lstrip("!")
+    if " = " in stripped:
+        key, _, raw_value = stripped.partition(" = ")
+        # Take only the first tab-delimited value for the metadata dict
+        value = raw_value.split("\t")[0].strip().strip('"')
+        metadata[key.strip()] = value
+    elif "\t" in stripped:
+        key, _, raw_value = stripped.partition("\t")
+        metadata[key.strip()] = raw_value.strip().strip('"')
 
 
 def _extract_sample_ids(line: str) -> tuple[str, ...]:
