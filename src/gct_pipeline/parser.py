@@ -143,7 +143,10 @@ def _parse_meta_line(line: str, metadata: dict[str, str]) -> None:
         metadata[key.strip()] = value
     elif "\t" in stripped:
         key, _, raw_value = stripped.partition("\t")
-        metadata[key.strip()] = raw_value.strip().strip('"')
+        # Take only the first tab-delimited value (multi-sample lines
+        # repeat the same value once per sample — keep just one).
+        first_value = raw_value.split("\t")[0]
+        metadata[key.strip()] = first_value.strip().strip('"')
 
 
 def _extract_sample_ids(line: str) -> tuple[str, ...]:

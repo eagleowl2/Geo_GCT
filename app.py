@@ -82,7 +82,7 @@ _PLATFORMS: dict[str, str] = {
 }
 
 _DEFAULT_CACHE = Path.home() / ".gct_pipeline" / "probe_cache.json"
-_APP_VERSION = "0.4.0"
+_APP_VERSION = "0.5.0"
 
 with st.sidebar:
     st.markdown("## 🧬 GEO → GCT Pipeline")
@@ -240,7 +240,14 @@ if st.session_state.matrix is not None:
 
     accession = matrix.metadata.get("Series_geo_accession", "—")
     title = matrix.metadata.get("Series_title", "—")
-    organism = matrix.metadata.get("Series_sample_organism", "—")
+    # Real GEO Series Matrix files expose organism via Sample_organism_ch1
+    # (per-sample). Series_sample_organism is rare — try both, plus taxid fallback.
+    _TAXID_TO_ORGANISM = {"9606": "Homo sapiens", "10090": "Mus musculus", "10116": "Rattus norvegicus"}
+    organism = (
+        matrix.metadata.get("Sample_organism_ch1")
+        or matrix.metadata.get("Series_sample_organism")
+        or _TAXID_TO_ORGANISM.get(matrix.metadata.get("Series_sample_taxid", ""), "—")
+    )
 
     # Top metrics row
     m1, m2, m3, m4 = st.columns(4)
