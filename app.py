@@ -6,7 +6,12 @@ import gzip
 import io
 import json
 import math
+import sys
 from pathlib import Path
+
+# Ensure the local src/ tree is always used, even if an older installed
+# version of gct-pipeline is cached in the Streamlit Cloud environment.
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 import pandas as pd
 import streamlit as st
@@ -68,7 +73,7 @@ _PLATFORMS: dict[str, str] = {
 }
 
 _DEFAULT_CACHE = Path.home() / ".gct_pipeline" / "probe_cache.json"
-_APP_VERSION = "0.2.0"
+_APP_VERSION = "0.3.0"
 
 with st.sidebar:
     st.markdown("## 🧬 GEO → GCT Pipeline")
