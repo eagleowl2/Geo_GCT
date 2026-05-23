@@ -68,6 +68,7 @@ _PLATFORMS: dict[str, str] = {
 }
 
 _DEFAULT_CACHE = Path.home() / ".gct_pipeline" / "probe_cache.json"
+_APP_VERSION = "0.2.0"
 
 with st.sidebar:
     st.markdown("## 🧬 GEO → GCT Pipeline")
@@ -75,6 +76,7 @@ with st.sidebar:
         "**Made by [Alexander Rusinov](https://github.com/eagleowl2)**  \n"
         "Bioinformatics data pipeline · GEO Series Matrix → GCT 1.2"
     )
+    st.caption(f"v{_APP_VERSION}")
     st.caption(
         "Powered by [MyGene.info](https://mygene.info) · "
         "[Source on GitHub](https://github.com/eagleowl2/Geo_GCT)"
