@@ -231,29 +231,41 @@ if st.session_state.matrix is not None:
     # Expression preview
     st.subheader("Expression matrix preview (first 50 rows)")
     n_preview = min(50, len(matrix.probe_ids))
+    has_titles = len(matrix.sample_titles) == len(matrix.sample_ids) and len(matrix.sample_ids) > 0
 
-    # Column labels: prefer sample titles when available
-    has_titles = len(matrix.sample_titles) == len(matrix.sample_ids)
-    if has_titles:
-        use_titles = st.toggle(
-            "Show sample titles instead of GSM IDs",
-            value=True,
-            help="Switches column headers between human-readable titles "
-                 "(e.g. 'BMDM, untreated, 1') and GEO accession IDs.",
+    if n_preview == 0:
+        st.warning(
+            "**No inline expression data found in this file.**  \n"
+            "This GEO Series Matrix file contains sample metadata and "
+            f"**{len(matrix.sample_ids):,} sample IDs** but no expression table rows.  \n\n"
+            "This is common for datasets that store expression values in separate "
+            "supplementary files (e.g. NanoString GeoMx, 10x Visium, bulk RNA-seq counts).  \n"
+            f"Look for supplementary files on the "
+            f"[GEO page for {accession}](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={accession}).",
+            icon="ℹ️",
         )
-        col_labels = list(matrix.sample_titles if use_titles else matrix.sample_ids)
     else:
-        col_labels = list(matrix.sample_ids)
+        # Column labels: prefer sample titles when available
+        if has_titles:
+            use_titles = st.toggle(
+                "Show sample titles instead of GSM IDs",
+                value=True,
+                help="Switches column headers between human-readable titles "
+                     "(e.g. 'BMDM, untreated, 1') and GEO accession IDs.",
+            )
+            col_labels = list(matrix.sample_titles if use_titles else matrix.sample_ids)
+        else:
+            col_labels = list(matrix.sample_ids)
 
-    preview_df = pd.DataFrame(
-        matrix.expression[:n_preview],
-        index=list(matrix.probe_ids[:n_preview]),
-        columns=col_labels,
-    )
-    preview_df.index.name = "Probe ID"
-    st.dataframe(preview_df, use_container_width=True)
+        preview_df = pd.DataFrame(
+            matrix.expression[:n_preview],
+            index=list(matrix.probe_ids[:n_preview]),
+            columns=col_labels,
+        )
+        preview_df.index.name = "Probe ID"
+        st.dataframe(preview_df, use_container_width=True)
 
-    # Sample title reference table
+    # Sample title reference table (show for all files that have titles)
     if has_titles:
         with st.expander("🏷️ Sample ID ↔ title mapping", expanded=False):
             st.dataframe(
@@ -271,7 +283,16 @@ if st.session_state.matrix is not None:
     st.divider()
     st.subheader("Step 3 — Convert probes & export GCT")
 
-    if st.session_state.gct_content is not None and st.session_state.gene_mapping is not None:
+    if len(matrix.probe_ids) == 0:
+        st.info(
+            "**Run Pipeline is unavailable** — this file has no inline expression rows to convert.  \n"
+            "This is common for spatial or sequencing datasets that store counts in separate "
+            "supplementary files.  \n"
+            f"Find them on the [GEO page for {accession}]"
+            f"(https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={accession}).",
+            icon="🚫",
+        )
+    elif st.session_state.gct_content is not None and st.session_state.gene_mapping is not None:
         gene_mapping = st.session_state.gene_mapping
 
         # Mapping summary
