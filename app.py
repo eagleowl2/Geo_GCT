@@ -11,7 +11,11 @@ from pathlib import Path
 
 # Ensure the local src/ tree is always used, even if an older installed
 # version of gct-pipeline is cached in the Streamlit Cloud environment.
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# We also pop any pre-imported gct_pipeline so Python re-resolves from src/.
+_SRC_DIR = (Path(__file__).parent / "src").resolve()
+sys.path.insert(0, str(_SRC_DIR))
+for _stale in [m for m in sys.modules if m == "gct_pipeline" or m.startswith("gct_pipeline.")]:
+    del sys.modules[_stale]
 
 import pandas as pd
 import streamlit as st
@@ -24,6 +28,11 @@ from gct_pipeline import (
     export_gct,
     parse,
 )
+
+# Capture where gct_pipeline actually loaded from — surfaced in the sidebar
+# diagnostics expander so we can verify the right code is running.
+import gct_pipeline as _gp_mod
+_GP_LOCATION = getattr(_gp_mod, "__file__", "unknown")
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -73,7 +82,7 @@ _PLATFORMS: dict[str, str] = {
 }
 
 _DEFAULT_CACHE = Path.home() / ".gct_pipeline" / "probe_cache.json"
-_APP_VERSION = "0.3.0"
+_APP_VERSION = "0.4.0"
 
 with st.sidebar:
     st.markdown("## 🧬 GEO → GCT Pipeline")
@@ -147,6 +156,21 @@ with st.sidebar:
 
             **Source code & docs:** [github.com/eagleowl2/Geo_GCT](https://github.com/eagleowl2/Geo_GCT)
             """
+        )
+
+    with st.expander("🔧 Runtime diagnostics"):
+        st.code(
+            f"app version : {_APP_VERSION}\n"
+            f"python      : {sys.version.split()[0]}\n"
+            f"gct_pipeline: {_GP_LOCATION}\n"
+            f"src/ exists : {_SRC_DIR.exists()}\n"
+            f"src path    : {_SRC_DIR}",
+            language="text",
+        )
+        st.caption(
+            "If `gct_pipeline` does not point to a path ending in "
+            "`src/gct_pipeline/__init__.py`, an old installed copy is "
+            "shadowing the source tree."
         )
 
 # ---------------------------------------------------------------------------
